@@ -1,0 +1,12 @@
+# vscode rules
+/.vscode
+
+# python rules
+/venv
+
+# vim rules
+*.swp
+*.swo
+
+# misc rules
+/docs/PythonDeveloperTest.pdf

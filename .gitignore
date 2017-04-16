@@ -3,6 +3,9 @@
 
 # python rules
 /venv
+__pycache__
+.noseids
+.coverage
 
 # vim rules
 *.swp

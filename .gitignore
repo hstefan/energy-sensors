@@ -6,6 +6,8 @@
 __pycache__
 .noseids
 .coverage
+*.egg-info
+
 
 # vim rules
 *.swp
@@ -13,3 +15,4 @@ __pycache__
 
 # misc rules
 /docs/PythonDeveloperTest.pdf
+*.db

@@ -132,6 +132,12 @@ class EventLog(BASE):
             return []
         return parse_complex_list(self.fft_harmonics)
 
+    def get_peaks(self):
+        """Returns a list of float numbers representign the current_peaks_list field."""
+        if not self.current_peaks_list:
+            return []
+        return parse_float_list(self.current_peaks_list)
+
 def parse_complex_list(string):
     """Returns a list of complex numbers parsed from the format used by the `events` table."""
     # filter all non-empty results of a split by ';'
@@ -141,6 +147,10 @@ def parse_complex_list(string):
     # converts all tuples to native 'complex' type
     complex_list = [complex(float(r), float(i)) for r, i in complex_str_list]
     return complex_list
+
+def parse_float_list(string):
+    str_floats = filter(lambda x: x, string.split(';'))
+    return [float(x) for x in str_floats]
 
 def get_db_session(debug):
     """Returns a SQLAlchemy session for the application's SQLite db."""

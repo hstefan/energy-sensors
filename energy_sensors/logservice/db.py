@@ -126,6 +126,22 @@ class EventLog(BASE):
         """Builds the serialized represetnation of the current peaks list."""
         self.current_peaks_list = ''.join('{};'.format(p) for p in peaks)
 
+    def get_fft_harmonics(self):
+        """Returns a list of complex numbers parsed from the fft_harmonics field."""
+        if not self.fft_harmonics:
+            return []
+        return parse_complex_list(self.fft_harmonics)
+
+def parse_complex_list(string):
+    """Returns a list of complex numbers parsed from the format used by the `events` table."""
+    # filter all non-empty results of a split by ';'
+    str_pairs = filter(lambda x: x, string.split(';'))
+    # splits all elements by ',', resulting a list of tuples
+    complex_str_list = map(lambda p: p.split(','), str_pairs)
+    # converts all tuples to native 'complex' type
+    complex_list = [complex(float(r), float(i)) for r, i in complex_str_list]
+    return complex_list
+
 def get_db_session(debug):
     """Returns a SQLAlchemy session for the application's SQLite db."""
     engine = create_engine('sqlite:///logservice.db', echo=debug)

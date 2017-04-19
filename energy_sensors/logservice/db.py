@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 """Database models and utilities for energy_sensors.logservice functionalities."""
 
-from sqlalchemy import Boolean, BigInteger, Column, Float, Integer, Text, TIMESTAMP
+import datetime
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Boolean, Column, Float, Integer, Text, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 
 BASE = declarative_base()
@@ -16,7 +19,9 @@ class EventLog(BASE):
     Attributes:
         id                  Automatically generated primary key for the table.
         log_time_utc        The UTC timestamp for when a given entry was stored.
-        device_id           Reported integer id of the reporting device.
+        device_id           Integer id of the device.
+        device_fw           Firmware version of the device.
+        device_evt          Event type of the device.
         reported_time_utc   The UTC timestamp reported by then event entry, not necessarily the
                             same as log_time_utc.
         coil_reversed       Boolean representing alarm coil state.
@@ -32,17 +37,18 @@ class EventLog(BASE):
         fft_harmonics       Semicolon-separated tuples for harmonics calculated with FFT.
                             The tuples are in the (real,imaginary) format, representing complex
                             numbers.
-                            eg: 1083,2131;778.12,184.69;244.42,-844
+                            eg: 1083,2131;778.12,184.69;244.42,-844;
         wifi_strength_dbm   Measured strength of wifi signal in decibel-milliwatts.
         dummy_data          Unspecified placeholder data.
     """
 
     __tablename__ = 'events'
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    log_time_utc = Column(TIMESTAMP, nullable=False, server_default='current_timestamp')
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    log_time_utc = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     device_id = Column(Integer, nullable=False)
     device_fw = Column(Integer, nullable=False)
+    device_evt = Column(Integer, nullable=False)
     reported_time_utc = Column(TIMESTAMP, nullable=False)
     coil_reversed = Column(Boolean, nullable=False)
     power_active_w = Column(Float, nullable=False)
@@ -54,6 +60,6 @@ class EventLog(BASE):
     line_frequency = Column(Float, nullable=False)
     current_peaks_list = Column(Text, nullable=False)
     fft_harmonics = Column(Text, nullable=False)
-    wifi_strength_dbm = Column(Text, nullable=False)
+    wifi_strength_dbm = Column(Float, nullable=False)
     # NOTE: do we need to really store this, or is it just an artifact?
     dummy_data = Column(Integer, nullable=False)

@@ -63,3 +63,71 @@ class EventLog(BASE):
     wifi_strength_dbm = Column(Float, nullable=False)
     # NOTE: do we need to really store this, or is it just an artifact?
     dummy_data = Column(Integer, nullable=False)
+
+    @staticmethod
+    def from_event_dict(event_dict):
+        try:
+            # TODO: type validation!
+            evt = EventLog()
+
+            # retrieves device attributes
+            device_sec = event_dict['Device']
+            evt.device_id = device_sec['ID']
+            evt.device_fw = device_sec['Fw']
+            evt.device_evt = device_sec['Evt']
+
+            # retrieves report time
+            evt.reported_time_utc = event_dict['UTC Time'][0]
+
+            # retrieves alarm data
+            # TODO: also attempt to get data from the correctly typed key?
+            evt.coil_reversed = event_dict['Alarms']['CoilRevesed'] # possible typo in the dataset!
+
+            # retrieves power attributes, normalizing types to float
+            power_sec = event_dict['Power']
+            evt.power_active_w = float(power_sec['Active'])
+            # TODO: also attempt to get data from the correctly typed key?
+            evt.power_apparent_va = float(power_sec['Appearent']) # possible typo in the dataset!
+            evt.power_reactive_var = float(power_sec['Reactive'])
+
+            # retrieves power line attributes, normalizing types to float
+            line_sec = event_dict['Line']
+            evt.line_current_a = float(line_sec['Current'])
+            evt.line_phase_rad = float(line_sec['Phase'])
+            evt.line_voltage_v = float(line_sec['Voltage'])
+            # although hz isn't contained in the Line section, it's most likely related to it
+            evt.line_frequency = float(event_dict['hz'][0])
+
+            # retrieves harmonics
+            evt.set_fft_harmonics_from_lists(event_dict['FFT Re'], event_dict['FFT Img'])
+
+            # retrieves current peaks
+            evt.set_peaks_from_list(event_dict['Peaks'])
+
+            # retrieves dummy data, assuming it's actually useful :)
+            evt.dummy_data = event_dict['Dummy'][0]
+
+            # wifi sinal strength, normalizing to float
+            evt.wifi_strength_dbm = float(event_dict['WiFi Strength'][0])
+
+            # if we reached this point, all fields were correctly found
+            return evt
+        except:
+            return None
+
+    def set_fft_harmonics_from_lists(self, fft_real, fft_imaginary):
+        """Builds the serialized representation of the fft_harmonics complex numbers."""
+        if len(fft_real) != len(fft_imaginary):
+            raise RuntimeError('Mismatched length for the two string parts.')
+        complex_tuples = zip(fft_real, fft_imaginary)
+        self.fft_harmonics = ''.join(['{},{};'.format(r, i) for r, i in complex_tuples])
+
+    def set_peaks_from_list(self, peaks):
+        """Builds the serialized represetnation of the current peaks list."""
+        self.current_peaks_list = ''.join('{};'.format(p) for p in peaks)
+
+def get_db_session(debug):
+    """Returns a SQLAlchemy session for the application's SQLite db."""
+    engine = create_engine('sqlite:///logservice.db', echo=debug)
+    maker = sessionmaker(bind=engine)
+    return maker()

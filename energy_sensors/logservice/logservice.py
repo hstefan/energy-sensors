@@ -7,8 +7,10 @@ from flask import Flask, request, jsonify
 import flask.json
 import energy_sensors.lib.eventparser as eventparser
 from energy_sensors.logservice.db import EventLog, get_db_sessionmaker
+from energy_sensors.logservice.clustering import ClusteringBatchWorker
 
 app = Flask(__name__)
+clustering_worker = ClusteringBatchWorker(1000)
 
 def json_response(json_dict, http_status=HTTPStatus.OK):
     resp = jsonify(json_dict)
@@ -45,6 +47,8 @@ def log_store():
     session = get_db_sessionmaker(debug=True)()
     session.add(log_entry)
     session.commit()
+
+    clustering_worker.report_event_received()
 
     return json_response(parsed_event)
 

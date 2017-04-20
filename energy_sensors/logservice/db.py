@@ -4,8 +4,8 @@
 
 import datetime
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Boolean, Column, Float, Integer, Text, TIMESTAMP
+from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, Text, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 
 BASE = declarative_base()
@@ -137,6 +137,20 @@ class EventLog(BASE):
         if not self.current_peaks_list:
             return []
         return parse_float_list(self.current_peaks_list)
+
+class EventCluster(BASE):
+    """Stores information about which cluster each event is associated with."""
+    __tablename__ = 'event_clusters'
+
+    def __init__(self, cluster_id, event_id):
+        assert isinstance(cluster_id, int)
+        assert isinstance(event_id, int)
+        self.cluster_id = cluster_id
+        self.event_id = event_id
+
+    cluster_id = Column(Integer, primary_key=True, autoincrement=False)
+    event_id = Column(Integer, ForeignKey(EventLog.id), primary_key=True, autoincrement=False)
+    event = relationship(EventLog)
 
 def parse_complex_list(string):
     """Returns a list of complex numbers parsed from the format used by the `events` table."""

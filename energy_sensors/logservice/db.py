@@ -152,8 +152,7 @@ def parse_float_list(string):
     str_floats = filter(lambda x: x, string.split(';'))
     return [float(x) for x in str_floats]
 
-def get_db_session(debug):
+def get_db_sessionmaker(debug):
     """Returns a SQLAlchemy session for the application's SQLite db."""
     engine = create_engine('sqlite:///logservice.db', echo=debug)
-    maker = sessionmaker(bind=engine)
-    return maker()
+    return sessionmaker(bind=engine)

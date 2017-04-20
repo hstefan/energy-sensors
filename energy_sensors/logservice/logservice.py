@@ -6,7 +6,7 @@ from http import HTTPStatus
 from flask import Flask, request, jsonify
 import flask.json
 import energy_sensors.lib.eventparser as eventparser
-from energy_sensors.logservice.db import EventLog, get_db_session
+from energy_sensors.logservice.db import EventLog, get_db_sessionmaker
 
 app = Flask(__name__)
 
@@ -42,9 +42,9 @@ def log_store():
     if not log_entry:
         return json_error_response('Unabled to extract all fields from the given data.')
 
-    db_session = get_db_session(debug=True)
-    db_session.add(log_entry)
-    db_session.commit()
+    session = get_db_sessionmaker(debug=True)()
+    session.add(log_entry)
+    session.commit()
 
     return json_response(parsed_event)
 

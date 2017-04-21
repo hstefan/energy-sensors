@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """A web-service that stores and allows querying of energy sensor events."""
 
-from flask import Flask, request
+from flask import Flask, request, json
 import energy_sensors.lib.eventparser as eventparser
 from energy_sensors.logservice.db import Cluster, EventLog, get_db_sessionmaker
 from energy_sensors.logservice.clustering import ClusteringBatchWorker
@@ -30,7 +30,7 @@ def log_store():
 
     if content_type == json_mime:
         # bypass all the parsing and extract json from POST data
-        event_dict = request.json()
+        event_dict = json.loads(request.json)
         if not event_dict:
             # possibly invalid json syntax or a general decoding failure
             return json_error_response('Failed to decode json payload.')

@@ -2,19 +2,26 @@
 # -*- coding: utf-8 -*-
 """Provides one single function to parse our custom event format to a json representation."""
 
-from flask import Flask, request
+from flask import Flask, request, json
+from flask.json import JSONEncoder
 import energy_sensors.lib.eventparser as eventparser
 from energy_sensors.lib.responseutils import json_error_response, json_response
 
+class MiniJSONEncoder(JSONEncoder):
+    item_separator = ','
+    key_separator = ':'
+
 app = Flask(__name__)
+app.json_decoder = MiniJSONEncoder
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 @app.route('/log/parse', methods=['POST'])
 def log_parse():
     content_type = request.headers.get('Content-Type', None)
     event_dict = None
-    allowed_mime_types = ['text/plain']
+    allowed_mime_types = [None, 'text/plain']
 
-    if content_type not in allowed_mime_types:
+    if content_type not in allowed_mime_types or content_type:
         return json_error_response('Unsupported content-type: "{}"', content_type)
 
     # decode post data and parse

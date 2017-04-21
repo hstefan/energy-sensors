@@ -2,23 +2,15 @@
 # -*- coding: utf-8 -*-
 """A web-service that stores and allows querying of energy sensor events."""
 
-from http import HTTPStatus
-from flask import Flask, request, jsonify
-import flask.json
+from flask import Flask, request
 import energy_sensors.lib.eventparser as eventparser
 from energy_sensors.logservice.db import Cluster, EventLog, get_db_sessionmaker
 from energy_sensors.logservice.clustering import ClusteringBatchWorker
+from energy_sensors.lib.responseutils import json_error_response, json_response
 
 app = Flask(__name__)
+# this should really be a separate process for the optimal performance
 clustering_worker = ClusteringBatchWorker(1000)
-
-def json_response(json_dict, http_status=HTTPStatus.OK):
-    resp = jsonify(json_dict)
-    resp.status_code = http_status.value
-    return resp
-
-def json_error_response(error, http_status=HTTPStatus.BAD_REQUEST):
-    return json_response({'error': error}, http_status)
 
 @app.route('/log/store', methods=['POST'])
 def log_store():

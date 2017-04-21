@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, Text, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
+import dateutil.parser
 
 BASE = declarative_base()
 
@@ -78,6 +79,9 @@ class EventLog(BASE):
 
             # retrieves report time
             evt.reported_time_utc = event_dict['UTC Time'][0]
+            if not isinstance(evt.reported_time_utc, datetime.datetime):
+                # if the input isn't a datetime, attempt to parse it
+                evt.reported_time_utc = dateutil.parser.parse(evt.reported_time_utc)
 
             # retrieves alarm data
             # TODO: also attempt to get data from the correctly typed key?

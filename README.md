@@ -71,7 +71,7 @@ Future work: improve coverability.
 ./scripts/send_events.py "http://localhost:5000/log/store" res/events.txt
 
 # sends pre-parsed data to /log/store by forwarding responses from /log/parse
-/scripts/send_distributed_events.py "http://localhost:5001/log/parse" "http://localhost:5000/log/store" res/events.txt
+./scripts/send_distributed_events.py "http://localhost:5001/log/parse" "http://localhost:5000/log/store" res/events.txt
 ```
 
 If any of those scripts is ran at least once, *http://localhost:5000/clusters/summary* should

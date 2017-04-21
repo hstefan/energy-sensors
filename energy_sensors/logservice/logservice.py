@@ -25,22 +25,29 @@ def log_store():
     """Parses data POSTed and logs to the database."""
     # validates content-type
     content_type = request.headers.get('Content-Type', None)
-    if content_type != 'application/json':
-        return json_error_response('Unsupported content type.')
+    event_dict = None
+    json_mime = 'application/json'
+    text_mime = 'text/plain'
 
-    data_json = flask.json.loads(request.data)
-    if not data_json:
-        return json_error_response('Unable do parse json from POST data.')
+    if content_type == text_mime:
+        # parse data before attempting to store
+        data_str = request.data.decode('utf-8')
+        event_dict = eventparser.parse_event_to_dict(data_str)
+        if not event_dict:
+            return json_error_response('Failed to parse event text.')
 
-    event_str = data_json.get('entry', None)
-    if not event_str:
-        return json_error_response('Missing value on json data.')
+    if content_type == json_mime:
+        # bypass all the parsing and extract json from POST data
+        event_dict = request.json()
+        if not event_dict:
+            # possibly invalid json syntax or a general decoding failure
+            return json_error_response('Failed to decode json payload.')
 
-    parsed_event = eventparser.parse_event_to_dict(event_str)
-    if not parsed_event:
-        return json_error_response('Failed to parse event.')
+    if event_dict is None:
+        # if we reach here, no handler was found
+        return json_error_response('Unable to decode content-type "{}".'.format(content_type))
 
-    log_entry = EventLog.from_event_dict(parsed_event)
+    log_entry = EventLog.from_event_dict(event_dict)
     if not log_entry:
         return json_error_response('Unabled to extract all fields from the given data.')
 
@@ -50,14 +57,15 @@ def log_store():
 
     clustering_worker.report_event_received()
 
-    return json_response(parsed_event)
+    # returns an empty json, also indicading success via http status code
+    return json_response({})
 
 @app.route('/clusters/summary', methods=['GET'])
 def clusters_summary():
     """Generates a json report with data on current clusters."""
     session = get_db_sessionmaker(debug=True)()
     clusters = session.query(Cluster).all()
-    summary_dict = {'clusters' : [c.to_dict() for c in clusters] }
+    summary_dict = {'clusters' : [c.to_dict() for c in clusters]}
     return json_response(summary_dict)
 
 if __name__ == '__main__':

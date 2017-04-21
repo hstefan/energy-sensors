@@ -6,7 +6,7 @@ from http import HTTPStatus
 from flask import Flask, request, jsonify
 import flask.json
 import energy_sensors.lib.eventparser as eventparser
-from energy_sensors.logservice.db import EventLog, get_db_sessionmaker
+from energy_sensors.logservice.db import Cluster, EventLog, get_db_sessionmaker
 from energy_sensors.logservice.clustering import ClusteringBatchWorker
 
 app = Flask(__name__)
@@ -51,6 +51,14 @@ def log_store():
     clustering_worker.report_event_received()
 
     return json_response(parsed_event)
+
+@app.route('/clusters/summary', methods=['GET'])
+def clusters_summary():
+    """Generates a json report with data on current clusters."""
+    session = get_db_sessionmaker(debug=True)()
+    clusters = session.query(Cluster).all()
+    summary_dict = {'clusters' : [c.to_dict() for c in clusters] }
+    return json_response(summary_dict)
 
 if __name__ == '__main__':
     app.run()

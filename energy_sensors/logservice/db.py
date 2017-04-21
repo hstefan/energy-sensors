@@ -138,9 +138,66 @@ class EventLog(BASE):
             return []
         return parse_float_list(self.current_peaks_list)
 
+class Cluster(BASE):
+    """
+    Stores the calculated calculated statistical data for each cluster
+    Attributes:
+        id                      Cluster label, used as the primary key for the table.
+        count                   Number of elements associated with this cluster.
+        avg_power_active_w      Average active power in watts for the associated elements.
+        avg_power_reactive_var  Average reactive power in volt-ampere reactive for the associated
+                                elements.
+        avg_power_apparent_va   Average apparent power in volt-amper for the associated elements.
+        avg_line_current_a      Average current in ampere for the associated elements.
+        avg_line_voltage_v      Average voltage in volts for the associated elements.
+    """
+    __tablename__ = 'clusters'
+
+    id = Column(Integer, primary_key=True, autoincrement=False)
+    count = Column(Integer, default=0, nullable=False)
+    avg_power_active_w = Column(Float, default=0.0, nullable=False)
+    avg_power_reactive_var = Column(Float, default=0.0, nullable=False)
+    avg_power_apparent_va = Column(Float, default=0.0, nullable=False)
+    avg_line_current_a = Column(Float, default=0.0, nullable=False)
+    avg_line_voltage_v = Column(Float, default=0.0, nullable=False)
+
+    def __init__(self, label):
+        assert isinstance(label, int)
+        self.id = label
+        self.count = 0
+        self.avg_power_active_w = 0.0
+        self.avg_power_reactive_var = 0.0
+        self.avg_power_apparent_va = 0.0
+        self.avg_line_current_a = 0.0
+        self.avg_line_voltage_v = 0.0
+
+    def to_dict(self):
+        """
+        Returns a dictionary representation of the cluster data.
+
+        NOTE: There are a bunch of well-known hacks for outputing a dictionary from a SQLAlchemy
+        model, but we decided to stick with the straight-forward implementation.
+        """
+        return {'label': self.id,
+                'count': self.count,
+                'avg_power_active_w': self.avg_power_active_w,
+                'avg_power_reactive_var': self.avg_power_reactive_var,
+                'avg_power_apparent_va': self.avg_power_apparent_va,
+                'avg_line_current_a': self.avg_line_current_a,
+                'avg_line_voltage_v': self.avg_line_voltage_v}
+
 class EventCluster(BASE):
-    """Stores information about which cluster each event is associated with."""
-    __tablename__ = 'event_clusters'
+    """
+    Stores data for the one-to-many relationship between Cluster and EventLog
+    Although we could just add a nullable foreign key in the EventLog model, this approach attempts
+    to isolate the cluster computation from log storage. In other words, once a log is stored it
+    can be assumed to be read-only, as no updates will be necessary on the table.
+    Attributes:
+        cluster_id  Id (label) of the cluster.
+        event_id    Id of the associated event.
+    """
+
+    __tablename__ = 'event_cluster'
 
     def __init__(self, cluster_id, event_id):
         assert isinstance(cluster_id, int)
@@ -148,9 +205,11 @@ class EventCluster(BASE):
         self.cluster_id = cluster_id
         self.event_id = event_id
 
-    cluster_id = Column(Integer, primary_key=True, autoincrement=False)
-    event_id = Column(Integer, ForeignKey(EventLog.id), primary_key=True, autoincrement=False)
+    cluster_id = Column(Integer, ForeignKey(Cluster.id), primary_key=True)
+    event_id = Column(Integer, ForeignKey(EventLog.id), primary_key=True)
     event = relationship(EventLog)
+    cluster = relationship(Cluster)
+
 
 def parse_complex_list(string):
     """Returns a list of complex numbers parsed from the format used by the `events` table."""
